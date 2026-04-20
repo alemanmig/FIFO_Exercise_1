@@ -18,10 +18,10 @@ module tb;
 
   // Instantiation
   sync_fifo #(
-    .DEPTH                  (DEPTH),
-    .WIDTH                  (WIDTH),
-    .ALMOST_FULL_THRESHOLD  (ALMOST_FULL_THRESHOLD),
-    .ALMOST_EMPTY_THRESHOLD (ALMOST_EMPTY_THRESHOLD)
+    .DEPTH(DEPTH),
+    .WIDTH(WIDTH),
+    .ALMOST_FULL_THRESH(ALMOST_FULL_THRESH),
+    .ALMOST_EMPTY_THRESH(ALMOST_EMPTY_THRESH)
   ) dut (
       .clk(vif.clk),
       .rst_n(vif.rst_n),
@@ -39,8 +39,8 @@ module tb;
   bind dut sva #(
       .DEPTH                  (DEPTH),
       .WIDTH                  (WIDTH),
-      .ALMOST_FULL_THRESHOLD  (ALMOST_FULL_THRESHOLD),
-      .ALMOST_EMPTY_THRESHOLD (ALMOST_EMPTY_THRESHOLD)
+      .ALMOST_FULL_THRESH  (ALMOST_FULL_THRESH),
+      .ALMOST_EMPTY_THRESH (ALMOST_EMPTY_THRESH)
   ) dut_sva (
       .clk(vif.clk),
       .rst_n(vif.rst_n),
