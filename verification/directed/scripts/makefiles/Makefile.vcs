@@ -1,0 +1,304 @@
+##=============================================================================
+## [Filename]       Makefile.vcs
+## [Project]        -
+## [Author]         Ciro Bermudez - cirofabian.bermudez@gmail.com
+## [Language]       GNU Makefile
+## [Created]        Dec 2025
+## [Modified]       -
+## [Description]    Generic Makefile for RTL development
+## [Notes]          -
+## [Status]         stable
+## [Revisions]      -
+##=============================================================================
+
+# ===============================  VARIABLES  =================================
+
+# Miscellaneous variables
+CUR_DATE    = $(shell date +%Y-%m-%d_%H-%M-%S)
+
+# Directories
+GIT_DIR     := $(shell git rev-parse --show-toplevel)
+TB_DIR      := $(GIT_DIR)/verification/directed
+ROOT_DIR    := $(CURDIR)
+RUN_DIR     := $(ROOT_DIR)/sim
+LOGS_DIR    := $(ROOT_DIR)/logs
+COV_DIR     := $(ROOT_DIR)/cov
+SCRIPTS_DIR := $(TB_DIR)/scripts
+VERDI_DIR   := $(SCRIPTS_DIR)/verdi
+RTL_DIR     := $(GIT_DIR)/rtl
+DPI_DIR     := $(TB_DIR)/dpi
+REGR_DIR    := $(ROOT_DIR)/regression
+MERGE_DIR   := $(ROOT_DIR)/merge_cov
+
+# TB configurations
+TEST ?= top_test
+SEED ?= 1503625532
+VCS_DEFINES ?= +define+GIT_DIR=\"$(TB_DIR)\" +define+ERROR1_VERSION
+RUN_ARGS ?= +iterations=300 +debounce_time=120
+
+COV_NAME ?= simv_cov
+JOB_NAME ?= debug
+
+# Simulation mode [true, false]
+ENABLE_GUI ?= false
+GUI_FLAGS  ?= -ucli -do $(TB_DIR)/run.tcl
+
+# Random Seed mode [auto, fixed]
+SEED_MODE  ?= auto
+SEED_FLAGS ?=
+
+# Code Coverage [true, false]
+ENABLE_CODE_COV  ?= false
+COV_FLAGS_COMMON ?= -cm line+cond+fsm+branch+tgl+assert
+COV_FLAGS_VCS    ?=
+COV_FLAGS_SIMV   ?=
+
+# SVA [true, false]
+ENABLE_SVA ?= false
+SVA_FLAGS_VCS  ?= -assert disable
+SVA_FLAGS_SIMV ?=
+
+# ================================  CONTROL  ==================================
+
+# Simulation mode switch [true, fasle]
+ifeq ($(ENABLE_GUI),true)
+	GUI_FLAGS = -gui=verdi &
+endif
+
+# Code Coverage switch [true, false]
+ifeq ($(ENABLE_CODE_COV),true)
+	COV_FLAGS_VCS  = $(COV_FLAGS_COMMON) -cm_dir $(RUN_DIR)/$(COV_NAME) 
+	COV_FLAGS_SIMV = $(COV_FLAGS_COMMON)
+endif
+
+# Command to run simv with correct seed option [auto|fixed]
+ifeq ($(SEED_MODE),auto)
+  SEED_FLAGS = +ntb_random_seed_automatic
+else
+  SEED_FLAGS = +ntb_random_seed=$(SEED)
+endif
+
+# SVA mode switch [true, false]
+ifeq ($(ENABLE_SVA),true)
+	SVA_FLAGS_VCS  = -assert enable_diag+enable_hier
+	SVA_FLAGS_SIMV = -assert finish_maxfail=1000+maxcover=10+summary+quiet1+hier=$(TB_DIR)/sva/assert_hier.txt+report=$(LOGS_DIR)/$(CUR_DATE)_sva.log
+endif
+
+# ==============================  TOOLS SETUP  ================================
+
+# Files
+RTL_FILES = $(RTL_DIR)/debouncer.sv
+SVE = -F $(TB_DIR)/sve.f
+VERDI_FILE = $(VERDI_DIR)/verdi.tcl
+DPI_FILE = $(DPI_DIR)/dpi.cpp
+
+# Synopsys VCS/SIMV options
+FILES = $(RTL_FILES) $(SVE) 
+
+VCS_FLAGS = -full64 -sverilog \
+			-lca -debug_access+all -kdb \
+			-timescale=1ns/100ps $(FILES) \
+			-l $(LOGS_DIR)/$(CUR_DATE)_comp.log \
+			-top tb \
+			-j8 \
+			$(VCS_DEFINES) \
+			$(COV_FLAGS_VCS) \
+			$(SVA_FLAGS_VCS) \
+			$(DPI_FILE)
+
+SIMV_FLAGS = $(COV_FLAGS_SIMV) \
+			 $(SVA_FLAGS_SIMV) \
+			 $(RUN_ARGS) \
+			 $(GUI_FLAGS)
+
+URG_FLAGS = -full64 -dir $(COV_NAME).vdb -format both \
+			-log $(LOGS_DIR)/$(CUR_DATE)_cov.log \
+			-report $(COV_DIR)
+
+# VERDI Configuration (see work/sim/verdi.cmd)
+VERDI_FLAGS    = -ssf $(RUN_DIR)/$(JOB_NAME)/novas.fsdb -dbdir simv.daidir -nologo -q
+VERDI_PLAY     = -play $(VERDI_FILE)
+VERDI_COV      = -cov -covdir $(COV_NAME).vdb -nologo -q
+
+# Colors
+C_RED := \033[31m
+C_GRE := \033[32m
+C_BLU := \033[34m
+C_LBL := \033[36m
+C_YEL := \033[33m
+C_ORA := \033[38;5;214m
+NC    := \033[0m 
+
+# Synopsys tools
+SYNOPSYS_TOOLS = vcs urg verdi wv
+
+# ================================  TARGETS  ==================================
+
+SHELL         := bash
+.DEFAULT_GOAL := all
+
+.PHONY: all
+all: help
+#______________________________________________________________________________
+
+.PHONY: tools-check
+tools-check: ## TB: Check for missing tools
+	@echo -e "$(C_ORA)Synopsys tool checking...$(NC)"
+	@for tool in $(SYNOPSYS_TOOLS); do \
+		if ! command -v $$tool >/dev/null 2>&1; then \
+			echo -e "$(C_RED)Error: $(C_BLU)$$tool$(C_RED) is not installed or not in PATH$(NC)"; \
+			exit 1; \
+		else \
+			echo -e "$(C_BLU)$$tool$(NC)\t is INSTALLED$(NC)"; \
+		fi; \
+	done
+	@echo "All Synopsys tools are available"
+#______________________________________________________________________________
+
+.PHONY: vars
+vars: ## TB: Print Makefile variables
+	@echo -e "$(C_ORA)Miscellaneous variables$(NC)"
+	@echo "CUR_DATE    = $(CUR_DATE)"
+	@echo ""
+	@echo -e "$(C_ORA)Directory variables$(NC)"
+	@echo "GIT_DIR     = $(GIT_DIR)"
+	@echo "TB_DIR      = $(TB_DIR)"
+	@echo "ROOT_DIR    = $(ROOT_DIR)"
+	@echo "RUN_DIR     = $(RUN_DIR)"
+	@echo "LOGS_DIR    = $(LOGS_DIR)"
+	@echo "COV_DIR     = $(COV_DIR)"
+	@echo "SCRIPTS_DIR = $(SCRIPTS_DIR)"
+	@echo "VERDI_DIR   = $(VERDI_DIR)"
+	@echo "RTL_DIR     = $(RTL_DIR)"
+	@echo "DPI_DIR     = $(DPI_DIR)"
+	@echo ""
+	@echo -e "$(C_ORA)UVM variables$(NC)"
+	@echo "TEST             = $(TEST)"
+	@echo "VERBOSITY        = $(VERBOSITY)"
+	@echo "SEED             = $(SEED)"
+	@echo "VCS_DEFINES      = $(VCS_DEFINES)"
+	@echo "RUN_ARGS         = $(RUN_ARGS)"
+	@echo "COV_NAME         = $(COV_NAME)"
+	@echo "JOB_NAME         = $(JOB_NAME)"
+	@echo "ENABLE_GUI       = $(ENABLE_GUI)"
+	@echo "GUI_FLAGS        = $(GUI_FLAGS)"
+	@echo "SEED_MODE        = $(SEED_MODE)"
+	@echo "SEED_FLAGS       = $(SEED_FLAGS)"
+	@echo "ENABLE_CODE_COV  = $(ENABLE_CODE_COV)"
+	@echo "COV_FLAGS_COMMON = $(COV_FLAGS_COMMON)"
+	@echo "COV_FLAGS_VCS    = $(COV_FLAGS_VCS)"
+	@echo "COV_FLAGS_SIMV   = $(COV_FLAGS_SIMV)"
+	@echo "PID              = $$$$"
+	@echo ""
+#______________________________________________________________________________
+
+# ==========================  SYNOPSYS VCS/VERDI/URG  ==========================
+
+.PHONY: compile
+compile: ## TB: Runs VCS compilation
+	@echo -e "$(C_ORA)TB: Compiling UVM project$(NC)"
+	@mkdir -p $(RUN_DIR) $(LOGS_DIR)
+	cd $(RUN_DIR) && vcs $(VCS_FLAGS)
+#______________________________________________________________________________
+
+.PHONY: sim
+sim: ## TB: Runs simv simulation
+	@echo -e "$(C_ORA)TB: Running simulation SEED_MODE=$(SEED_MODE) SEED=$(SEED)$(NC)"
+	@mkdir -p $(RUN_DIR)/$(JOB_NAME) $(LOGS_DIR)
+	TEST_ID="$(CUR_DATE)_$(TEST)_PID_$$$$"; \
+	LOG_FILE="-l $(LOGS_DIR)/$${TEST_ID}_simv.log"; \
+	COV_FLAGS="-cm_test debug -cm_name $${TEST_ID}"; \
+	cd $(RUN_DIR)/$(JOB_NAME) && ./../simv $(SEED_FLAGS) $${COV_FLAGS} $${LOG_FILE} $(SIMV_FLAGS)
+#______________________________________________________________________________
+
+.PHONY: verdi
+verdi: ## TB: Opens Verdi GUI
+	@echo -e "$(C_ORA)TB: Openning Verdi$(NC)"
+	cd $(RUN_DIR) && verdi $(VERDI_FLAGS) &
+#______________________________________________________________________________
+
+.PHONY: verdi-play
+verdi-play: ## TB: Opens Verdi GUI running verdi.tcl file
+	@echo -e "$(C_ORA)TB: Openning Verdi running verdi.tcl$(NC)"
+	cd $(RUN_DIR) && verdi $(VERDI_FLAGS) $(VERDI_PLAY) &
+#______________________________________________________________________________
+
+.PHONY: cov
+cov: ## TB: Create coverage report
+	@echo -e "$(C_ORA)TB: Creating coverage report$(NC)"
+	@mkdir -p $(COV_DIR)
+	cd $(RUN_DIR) && urg $(URG_FLAGS)
+#______________________________________________________________________________
+
+.PHONY: verdi-cov
+verdi-cov: ## TB: Open coverage report in Verdi
+	@echo -e "$(C_ORA)TB: Creating coverage report$(NC)"
+	cd $(RUN_DIR) && verdi $(VERDI_COV) &
+#______________________________________________________________________________
+
+.PHONY: compile-dpi
+compile-dpi: ## TB: Run dpi (C/C++) compilation
+	@echo -e "$(C_ORA)TB: Compiling dpi (C/C++) code$(NC)"
+	g++ -fPIC -c $(DPI_FILE) -I ${VCS_HOME}/include -o $(DPI_DIR)/dpi.o
+# -fPIC Flag to generate position-independent code (shared library)
+# If you want to compile dpi repeatedly and include the .o to simv
+# but it's better to compile from vcs command
+#______________________________________________________________________________
+
+.PHONY: clean
+clean: ## TB: Remove all simulation files
+	@echo -e "$(C_ORA)TB: Removing all simulation files$(NC)"
+	rm -rf $(RUN_DIR) $(LOGS_DIR) $(COV_DIR)
+#______________________________________________________________________________
+
+.PHONY: clean-logs
+clean-logs: ## TB: Remove logs
+	@echo -e "$(C_ORA)TB: Removing all logs files$(NC)"
+	rm -rf $(LOGS_DIR)
+#______________________________________________________________________________
+
+.PHONY: fsdb2vcd
+fsdb2vcd: ## TB: Convert FSDB to VCD
+	@echo -e "$(C_ORA)TB: Convert FSDB to VCD$(NC)"
+	cd $(RUN_DIR)/$(JOB_NAME) && fsdb2vcd novas.fsdb -o novas.vcd -sv
+#______________________________________________________________________________
+
+.PHONY: vcd2fsdb
+vcd2fsdb: ## TB: Convert VCD to FSDB
+	@echo -e "$(C_ORA)TB: Convert VCD to FSDB$(NC)"
+	cd $(RUN_DIR)/$(JOB_NAME) && vcd2fsdb novas.vcd -o novas.fsdb -sv
+#______________________________________________________________________________
+
+# ================================= INCLUDES ================================= #
+
+# ## PYTHON REGRESSION MANAGER
+# include $(SCRIPTS_DIR)/regressions/Makefile.regression
+
+.PHONY: help
+help: ## TB: Displays help message
+	@echo "======================================================================"
+	@echo -e "                           $(C_BLU) MAKEFILE.UVC $(NC) "
+	@echo "======================================================================"
+	@echo "Usage: make <target> <variables>"
+	@echo "--------------------------- Targets ----------------------------------"
+	@grep -h -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "- make $(C_LBL)%-25s$(NC) %s\n", $$1, $$2}'
+	@echo "--------------------------- Variables -------------------------------"
+	@echo "  TEST              : Name of UVM_TEST"
+	@echo "  SEED_MODE         : Selects seed mode [auto|fixed]"
+	@echo "  SEED              : Random seed used, must be an integer > 0"
+	@echo "  ENABLE_GUI        : Enables to run simulation in gui mode [true|false]"
+	@echo "  ENABLE_CODE_COV   : Enables code coverage [true|false]"
+	@echo "  VCS_DEFINES       : Add defines to vcs command"
+	@echo "  RUN_ARGS          : Add plusargs to simv command"
+	@echo "  JOB_NAME          : Name of the job (simulation folder)"
+	@echo "-------------------------- Variable Values --------------------------"
+	@echo "  TEST              : $(TEST)"
+	@echo "  SEED_MODE         : $(SEED_MODE)"
+	@echo "  SEED              : $(SEED)"
+	@echo "  ENABLE_GUI        : $(ENABLE_GUI)"
+	@echo "  ENABLE_CODE_COV   : $(ENABLE_CODE_COV)"
+	@echo "  VCS_DEFINES       : $(VCS_DEFINES)"
+	@echo "  RUN_ARGS          : $(RUN_ARGS)"
+	@echo "  JOB_NAME          : $(JOB_NAME)"
+	@echo "======================================================================"
+#______________________________________________________________________________
