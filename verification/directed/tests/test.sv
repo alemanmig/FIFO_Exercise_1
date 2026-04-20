@@ -43,13 +43,13 @@ module test (
   // Task: do_reset — apply two-cycle asynchronous reset
   // ----------------------------------------------------------------
   task automatic reset();
-    rst_n    = 0;
-    write_en = 0;
-    read_en  = 0;
-    @(posedge clk);   // hold for at least 2 rising edges
-    @(posedge clk);
-    rst_n = 1;
-    @(posedge clk);   // one idle cycle before stimulus
+    vif.rst_n    = 0;
+    vif.write_en = 0;
+    vif.read_en  = 0;
+    @(posedge vif.clk);   // hold for at least 2 rising edges
+    @(posedge vif.clk);
+    vif.rst_n = 1;
+    @(posedge vif.clk);   // one idle cycle before stimulus
   endtask : reset
 
 
