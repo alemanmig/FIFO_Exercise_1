@@ -26,7 +26,7 @@
 //   G7  — Functional covers (reachability)
 // ============================================================
 
-module sync_fifo_sva #(
+module sva #(
   parameter int unsigned DEPTH                  = 8,
   parameter int unsigned WIDTH                  = 8,
   parameter int unsigned ALMOST_FULL_THRESHOLD  = DEPTH - 1,
