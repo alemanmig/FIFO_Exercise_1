@@ -2,7 +2,7 @@
 `define VIF_IF_SV
 
 interface vif_if(
-    input logic clk_i
+    input logic clk
 ); 
 
   timeunit      1ns;
@@ -10,18 +10,23 @@ interface vif_if(
   
   import config_pkg::*;
   
-  logic rst_i;
-  logic sw_i;
-  logic db_level_o;
-  logic db_tick_o;
+  logic rst_n;
+  logic write_en;
+  logic write_data;
+  logic read_en;
+  logic read_data;
+  logic full;
+  logic empty;
+  logic almost_full;
+  logic almost_empty;
 
-  clocking cb @(posedge clk_i);
+/*  clocking cb @(posedge clk_i);
     default input #1ns output #1ns;
     output rst_i;
     output sw_i;
     input db_level_o;
     input db_tick_o;
-  endclocking
+  endclocking */
 
 endinterface : vif_if
 
