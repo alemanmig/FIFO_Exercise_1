@@ -6,41 +6,52 @@ module tb;
   import config_pkg::*;
 
   // Clock signal
-  logic clk_i = 0;
+  logic clk = 0;
   int unsigned MainClkPeriod = 10;  // 100 MHz -> 10 ns period
-  always #(MainClkPeriod / 2) clk_i = ~clk_i;
+  always #(MainClkPeriod / 2) clk = ~clk;
 
   // Interface
-  vif_if vif (clk_i);
+  vif_if vif (clk);
 
   // Test
   test top_test (vif);
 
   // Instantiation
-  debouncer #(
-      .ClkFreq(ClkFreq),
-      .StableTime(StableTime)
+  sync_fifo #(
+    .DEPTH                  (DEPTH),
+    .WIDTH                  (WIDTH),
+    .ALMOST_FULL_THRESHOLD  (ALMOST_FULL_THRESHOLD),
+    .ALMOST_EMPTY_THRESHOLD (ALMOST_EMPTY_THRESHOLD)
   ) dut (
-      .clk_i(vif.clk_i),
-      .rst_i(vif.rst_i),
-      .sw_i(vif.sw_i),
-      .db_level_o(vif.db_level_o),
-      .db_tick_o(vif.db_tick_o)
+      .clk(vif.clk),
+      .rst_n(vif.rst_n),
+      .write_en(vif.write_en),
+      .write_data(vif.write_data),
+      .read_en(vif.read_en),
+      .read_data(vif.read_data),
+      .full(vif.full),
+      .empty(vif.empty),
+      .almost_full(vif.almost_full),
+      .almost_empty(vif.almost_empty)
   );
   
   // SVA
   bind dut sva #(
-      .ClkFreq(ClkFreq),
-      .StableTime(StableTime)
+      .DEPTH                  (DEPTH),
+      .WIDTH                  (WIDTH),
+      .ALMOST_FULL_THRESHOLD  (ALMOST_FULL_THRESHOLD),
+      .ALMOST_EMPTY_THRESHOLD (ALMOST_EMPTY_THRESHOLD)
   ) dut_sva (
-      .clk_i(clk_i),
-      .rst_i(rst_i),
-      .sw_i(sw_i),
-      .db_level_o(db_level_o),
-      .db_tick_o(db_tick_o),
-      .ff1(ff1),
-      .ff2(ff2),
-      .ff3(ff3)
+      .clk(vif.clk),
+      .rst_n(vif.rst_n),
+      .write_en(vif.write_en),
+      .write_data(vif.write_data),
+      .read_en(vif.read_en),
+      .read_data(vif.read_data),
+      .full(vif.full),
+      .empty(vif.empty),
+      .almost_full(vif.almost_full),
+      .almost_empty(vif.almost_empty)
   );
 
   initial begin
