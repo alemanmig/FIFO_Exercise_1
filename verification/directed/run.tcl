@@ -14,13 +14,12 @@
 
 # Dump signals to FSDB (RECOMMENDED)
 dump -file novas.fsdb -type FSDB
-dump -add tb.dut -depth 1 -ports -fid FSDB0
+dump -add tb.dut -depth 0 -fid FSDB0 -aggregates
 run
-quit
 
 # Dump signals to FSDB (RECOMMENDED)
 # dump -file novas.fsdb -type FSDB
-# dump -add tb.* -depth 0 -fid FSDB0 -aggregates
+# dump -add tb -depth 0 -fid FSDB0 -aggregates
 # run
 # quit
 
