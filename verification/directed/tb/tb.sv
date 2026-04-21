@@ -36,7 +36,7 @@ module tb;
   );
   
   // SVA
-  bind sync_fifo sva#(
+  bind sync_fifo sva #(
       .DEPTH                  (DEPTH),
       .WIDTH                  (WIDTH),
       .ALMOST_FULL_THRESH  (ALMOST_FULL_THRESH),
@@ -52,8 +52,8 @@ module tb;
       .empty(empty),
       .almost_full(almost_full),
       .almost_empty(almost_empty),
-      .write_ptr(write_ptr),
-      .read_ptr(read_ptr),
+      .wr_ptr(write_ptr),
+      .rd_ptr(read_ptr),
       .count(count)
   );
 

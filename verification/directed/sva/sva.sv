@@ -73,24 +73,20 @@ module sva #(
   // After rst_n is released, pointers and count must be zero
   // and empty must be asserted on the very next posedge.
 
-  property pr1;
-    @(posedge clk)
-    $rose(rst_n) |=> (count === '0);
-  endproperty
-
-  a_rst_count_zero : assert property (pr1) 
-  else $error("G1: count not zero after reset");
+  a_rst_count_zero : assert property (
+    $rose(rst_n) |=> (count === '0) 
+  ) else $error("G1: count not zero after reset");
 
   a_rst_wr_ptr_zero : assert property (
-    @(posedge clk) $rose(rst_n) |=> (wr_ptr === '0)
+    $rose(rst_n) |=> (wr_ptr === '0)
   ) else $error("G1: wr_ptr not zero after reset");
 
   a_rst_rd_ptr_zero : assert property (
-    @(posedge clk) $rose(rst_n) |=> (rd_ptr === '0)
+    $rose(rst_n) |=> (rd_ptr === '0)
   ) else $error("G1: rd_ptr not zero after reset");
 
   a_rst_empty : assert property (
-    @(posedge clk) $rose(rst_n) |=> empty
+    $rose(rst_n) |=> empty
   ) else $error("G1: empty not asserted after reset");
 
   a_rst_not_full : assert property (
