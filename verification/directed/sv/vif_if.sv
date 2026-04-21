@@ -12,9 +12,9 @@ interface vif_if(
   
   logic rst_n;
   logic write_en;
-  logic write_data;
+  logic [WIDTH-1:0] write_data;
   logic read_en;
-  logic read_data;
+  logic [WIDTH-1:0] read_data;
   logic full;
   logic empty;
   logic almost_full;

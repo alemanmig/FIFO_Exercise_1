@@ -3,13 +3,19 @@ srcSignalView -on
 verdiSetActWin -dock widgetDock_<Signal_List>
 
 # Add Digital Signals
-srcSignalViewSelect "tb.dut.clk_i"
+srcSignalViewSelect "tb.dut.clk"
 srcSignalViewAddSelectedToWave
-srcSignalViewSelect "tb.dut.rst_i"
+srcSignalViewSelect "tb.dut.rst_n"
 srcSignalViewAddSelectedToWave
-srcSignalViewSelect "tb.dut.d_i\[7:0\]"
+srcSignalViewSelect "tb.dut.write_en"
 srcSignalViewAddSelectedToWave
-srcSignalViewSelect "tb.dut.q_o\[7:0\]"
+srcSignalViewSelect "tb.dut.read_en"
+srcSignalViewAddSelectedToWave
+srcSignalViewSelect "tb.dut.write_data[7:0]"
+srcSignalViewAddSelectedToWave
+srcSignalViewSelect "tb.dut.read_data[7:0]"
+srcSignalViewAddSelectedToWave
+srcSignalViewSelect "tb.dut.count"
 srcSignalViewAddSelectedToWave
 
 # Zoom to fit

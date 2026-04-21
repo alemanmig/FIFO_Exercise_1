@@ -48,14 +48,14 @@ SEED_MODE  ?= auto
 SEED_FLAGS ?=
 
 # Code Coverage [true, false]
-ENABLE_CODE_COV  ?= false
+ENABLE_CODE_COV  ?= true
 COV_FLAGS_COMMON ?= -cm line+cond+fsm+branch+tgl+assert
 COV_FLAGS_VCS    ?=
 COV_FLAGS_SIMV   ?=
 
 # SVA [true, false]
-ENABLE_SVA ?= false
-SVA_FLAGS_VCS  ?= -assert disable
+ENABLE_SVA ?= true
+SVA_FLAGS_VCS  ?= -assert enable_debug
 SVA_FLAGS_SIMV ?=
 
 # ================================  CONTROL  ==================================
