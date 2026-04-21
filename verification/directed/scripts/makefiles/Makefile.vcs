@@ -81,7 +81,7 @@ endif
 # SVA mode switch [true, false]
 ifeq ($(ENABLE_SVA),true)
 	SVA_FLAGS_VCS  = -assert enable_diag+enable_hier
-	SVA_FLAGS_SIMV = -assert finish_maxfail=1000+maxcover=10+summary+quiet1+hier=$(TB_DIR)/sva/assert_hier.txt+report=$(LOGS_DIR)/$(CUR_DATE)_sva.log
+	SVA_FLAGS_SIMV = -assert summary+quiet1+report=$(LOGS_DIR)/$(CUR_DATE)_sva.log
 endif
 
 # ==============================  TOOLS SETUP  ================================
