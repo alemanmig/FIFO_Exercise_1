@@ -1,12 +1,20 @@
 module test (
     vif_if vif
 );
+
+  // Pass / fail counters
+  int p = 0, f = 0;
+
+  //logic [WIDTH-1:0] rd;
+  
   // =================== DPI FUNCTIONS ==================== //
   import "DPI-C" function real ref_model(real initial_value);
 
   // ================== GLOBAL VARIABLES ================== //
 
   import config_pkg::*;
+
+  logic [WIDTH-1:0] rd;
 
   // =================== MAIN SEQUENCE ==================== //
 
@@ -16,10 +24,10 @@ module test (
     get_config_args();
 
     // Initial signal state before first reset
-    rst_n      = 0;
-    write_en   = 0;
-    read_en    = 0;
-    write_data = 0;
+    vif.rst_n      = 0;
+    vif.write_en   = 0;
+    vif.read_en    = 0;
+    vif.write_data = 0;
     
     // Apply reset
     reset();
@@ -44,15 +52,15 @@ module test (
     // remain 1 (overflow silently ignored).
     // ==============================================================
     $display("\n--- TC2: Full flag and overflow protection ---");
-    do_reset();
+    reset();
 
     repeat (8) push(8'hFF);           // fill to capacity
-    @(negedge clk);
-    check("TC2-A  full=1 after 8 writes",          full, 1'b1);
+    @(negedge vif.clk);
+    check("TC2-A  full=1 after 8 writes",          vif.full, 1'b1);
 
     push(8'hEE);                      // overflow attempt — must be ignored
-    @(negedge clk);
-    check("TC2-B  full=1 after overflow attempt",  full, 1'b1);
+    @(negedge vif.clk);
+    check("TC2-B  full=1 after overflow attempt",  vif.full, 1'b1);
 
     // ==============================================================
     // TC3 — Empty flag and underflow protection
@@ -60,39 +68,39 @@ module test (
     // remain 1 (underflow silently ignored).
     // ==============================================================
     $display("\n--- TC3: Empty flag and underflow protection ---");
-    do_reset();
+    reset();
 
     push(8'h01); push(8'h02); push(8'h03);
     pop(rd); pop(rd); pop(rd);
-    @(negedge clk);
-    check("TC3-A  empty=1 after 3 reads",           empty, 1'b1);
+    @(negedge vif.clk);
+    check("TC3-A  empty=1 after 3 reads", vif.empty, 1'b1);
 
     // Raw underflow attempt (bypasses pop task to match spec exactly)
-    read_en = 1; @(posedge clk); @(negedge clk); read_en = 0;
-    check("TC3-B  empty=1 after underflow attempt", empty, 1'b1);
+    vif.read_en = 1; @(posedge vif.clk); @(negedge vif.clk); vif.read_en = 0;
+    check("TC3-B  empty=1 after underflow attempt", vif.empty, 1'b1);
 
     // ==============================================================
     // TC4 — Almost-full threshold  (ALMOST_FULL_THRESHOLD = 6)
     // Verify almost_full asserts at count=6; full=1 at count=8.
     // ==============================================================
     $display("\n--- TC4: Almost-full threshold ---");
-    do_reset();
+    reset();
 
     repeat (5) push(8'hAA);           // count = 1..5 (below threshold)
 
     push(8'hAA);                      // count = 6
-    @(negedge clk);
-    check("TC4-A  almost_full=1 at count=6", almost_full, 1'b1);
-    check("TC4-B  full=0        at count=6", full,        1'b0);
+    @(negedge vif.clk);
+    check("TC4-A  almost_full=1 at count=6", vif.almost_full, 1'b1);
+    check("TC4-B  full=0        at count=6", vif.full,        1'b0);
 
     push(8'hAA);                      // count = 7
-    @(negedge clk);
-    check("TC4-C  almost_full=1 at count=7", almost_full, 1'b1);
-    check("TC4-D  full=0        at count=7", full,        1'b0);
+    @(negedge vif.clk);
+    check("TC4-C  almost_full=1 at count=7", vif.almost_full, 1'b1);
+    check("TC4-D  full=0        at count=7", vif.full,        1'b0);
 
     push(8'hAA);                      // count = 8
-    @(negedge clk);
-    check("TC4-E  full=1        at count=8", full,        1'b1);
+    @(negedge vif.clk);
+    check("TC4-E  full=1        at count=8", vif.full,        1'b1);
 
     // ==============================================================
     // TC5 — Almost-empty threshold  (ALMOST_EMPTY_THRESHOLD = 2)
@@ -100,23 +108,23 @@ module test (
     // empty at each occupancy level.
     // ==============================================================
     $display("\n--- TC5: Almost-empty threshold ---");
-    do_reset();
+    reset();
 
     repeat (3) push(8'hBB);           // count = 3
 
     pop(rd);                          // count = 2
-    @(negedge clk);
-    check("TC5-A  almost_empty=1 at count=2", almost_empty, 1'b1);
-    check("TC5-B  empty=0        at count=2", empty,        1'b0);
+    @(negedge vif.clk);
+    check("TC5-A  almost_empty=1 at count=2", vif.almost_empty, 1'b1);
+    check("TC5-B  empty=0        at count=2", vif.empty,        1'b0);
 
     pop(rd);                          // count = 1
-    @(negedge clk);
-    check("TC5-C  almost_empty=1 at count=1", almost_empty, 1'b1);
-    check("TC5-D  empty=0        at count=1", empty,        1'b0);
+    @(negedge vif.clk);
+    check("TC5-C  almost_empty=1 at count=1", vif.almost_empty, 1'b1);
+    check("TC5-D  empty=0        at count=1", vif.empty,        1'b0);
 
     pop(rd);                          // count = 0
-    @(negedge clk);
-    check("TC5-E  empty=1        at count=0", empty,        1'b1);
+    @(negedge vif.clk);
+    check("TC5-E  empty=1        at count=0", vif.empty,        1'b1);
 
     // ==============================================================
     // TC6 — Simultaneous read and write
@@ -125,26 +133,26 @@ module test (
     // the new entry appears at the correct position in drain order.
     // ==============================================================
     $display("\n--- TC6: Simultaneous read and write ---");
-    do_reset();
+    reset();
 
     push(8'hC1); push(8'hC2);
     push(8'hC3); push(8'hC4);        // count = 4
 
     // Assert both enables for exactly one clock cycle
-    @(negedge clk);
-    write_en   = 1;
-    write_data = 8'hEF;
-    read_en    = 1;
-    @(posedge clk);                   // DUT performs R+W simultaneously
-    @(negedge clk);
-    write_en = 0;
-    read_en  = 0;
+    @(negedge vif.clk);
+    vif.write_en   = 1;
+    vif.write_data = 8'hEF;
+    vif.read_en    = 1;
+    @(posedge vif.clk);                   // DUT performs R+W simultaneously
+    @(negedge vif.clk);
+    vif.write_en = 0;
+    vif.read_en  = 0;
 
     // count must still be 4 → neither full nor empty
-    check("TC6-A  full=0  after sim R+W",           full,      1'b0);
-    check("TC6-B  empty=0 after sim R+W",           empty,     1'b0);
+    check("TC6-A  full=0  after sim R+W",           vif.full,      1'b0);
+    check("TC6-B  empty=0 after sim R+W",           vif.empty,     1'b0);
     // read_data must hold the oldest entry (0xC1)
-    check("TC6-C  read_data=0xC1 (oldest popped)",  read_data, 8'hC1);
+    check("TC6-C  read_data=0xC1 (oldest popped)",  vif.read_data, 8'hC1);
 
     // Drain remaining 4 entries; verify FIFO order and 0xEF position
     pop(rd); check("TC6-D  drain[0] = 0xC2", rd, 8'hC2);
@@ -186,12 +194,12 @@ module test (
   // Drives write_en + write_data at negedge; deasserts after posedge.
   // ----------------------------------------------------------------
   task automatic push(input logic [WIDTH-1:0] d);
-    @(negedge clk);
-    write_en   = 1;
-    write_data = d;
-    @(posedge clk);   // DUT captures write_data on this edge
-    @(negedge clk);
-    write_en = 0;
+    @(negedge vif.clk);
+    vif.write_en   = 1;
+    vif.write_data = d;
+    @(posedge vif.clk);   // DUT captures write_data on this edge
+    @(negedge vif.clk);
+    vif.write_en = 0;
   endtask
 
   // ----------------------------------------------------------------
@@ -200,12 +208,12 @@ module test (
   // AFTER the posedge that registered the output (Option A semantics).
   // ----------------------------------------------------------------
   task automatic pop(output logic [WIDTH-1:0] d);
-    @(negedge clk);
-    read_en = 1;
-    @(posedge clk);   // DUT updates read_data on this edge
-    @(negedge clk);
-    d       = read_data;   // stable registered value
-    read_en = 0;
+    @(negedge vif.clk);
+    vif.read_en = 1;
+    @(posedge vif.clk);   // DUT updates read_data on this edge
+    @(negedge vif.clk);
+    d = vif.read_data;   // stable registered value
+    vif.read_en = 0;
   endtask
 
   // ----------------------------------------------------------------

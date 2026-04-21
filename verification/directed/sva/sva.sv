@@ -27,31 +27,40 @@
 // ============================================================
 
 module sva #(
+  parameter int ClkFreq    = 100_000_000,
+  parameter int StableTime = 10,
   parameter int unsigned DEPTH                  = 8,
   parameter int unsigned WIDTH                  = 8,
-  parameter int unsigned ALMOST_FULL_THRESHOLD  = DEPTH - 1,
-  parameter int unsigned ALMOST_EMPTY_THRESHOLD = 1
+  parameter int unsigned ALMOST_FULL_THRESH  = DEPTH - 1,
+  parameter int unsigned ALMOST_EMPTY_THRESH = 1,
+  parameter int ADDR_W = $clog2(DEPTH)   // address width
 )(
-  input logic                            clk,
-  input logic                            rst_n,
+  input logic                  clk,
+  input logic                  rst_n,
 
-  input logic                            write_en,
-  input logic [WIDTH-1:0]                write_data,
-  input logic                            read_en,
-  input logic [WIDTH-1:0]                read_data,
+  input logic                  write_en,
+  input logic [WIDTH-1:0]      write_data,
+  input logic                  read_en,
+  input logic [WIDTH-1:0]      read_data,
 
-  input logic                            full,
-  input logic                            empty,
-  input logic                            almost_full,
-  input logic                            almost_empty,
+  input logic                  full,
+  input logic                  empty,
+  input logic                  almost_full,
+  input logic                  almost_empty,
 
   // Internal DUT signals (accessible via bind)
-  input logic [$clog2(DEPTH)-1:0]        wr_ptr,
-  input logic [$clog2(DEPTH)-1:0]        rd_ptr,
-  input logic [$clog2(DEPTH):0]          count,
-  input logic                            write_fire,
-  input logic                            read_fire
+  input logic [ADDR_W:0]        wr_ptr,
+  input logic [ADDR_W:0]        rd_ptr,
+  input logic [ADDR_W:0]        count,
+  input logic                   write_fire,
+  input logic                   read_fire
 );
+
+  // ----------------------------------------------------------------
+  //  Local parameters
+  // ----------------------------------------------------------------
+  localparam int CounterMax = ClkFreq * StableTime / 1_000_000;
+ 
 
   // Shorthand: default clocking and reset for all properties
   default clocking @(posedge clk); endclocking
@@ -63,20 +72,25 @@ module sva #(
 
   // After rst_n is released, pointers and count must be zero
   // and empty must be asserted on the very next posedge.
-  a_rst_count_zero : assert property (
-    $rose(rst_n) |=> (count === '0)
-  ) else $error("G1: count not zero after reset");
+
+  property pr1;
+    @(posedge clk)
+    $rose(rst_n) |=> (count === '0);
+  endproperty
+
+  a_rst_count_zero : assert property (pr1) 
+  else $error("G1: count not zero after reset");
 
   a_rst_wr_ptr_zero : assert property (
-    $rose(rst_n) |=> (wr_ptr === '0)
+    @(posedge clk) $rose(rst_n) |=> (wr_ptr === '0)
   ) else $error("G1: wr_ptr not zero after reset");
 
   a_rst_rd_ptr_zero : assert property (
-    $rose(rst_n) |=> (rd_ptr === '0)
+    @(posedge clk) $rose(rst_n) |=> (rd_ptr === '0)
   ) else $error("G1: rd_ptr not zero after reset");
 
   a_rst_empty : assert property (
-    $rose(rst_n) |=> empty
+    @(posedge clk) $rose(rst_n) |=> empty
   ) else $error("G1: empty not asserted after reset");
 
   a_rst_not_full : assert property (
@@ -103,12 +117,12 @@ module sva #(
 
   // almost_full ↔ count >= ALMOST_FULL_THRESHOLD
   a_almost_full_iff_threshold : assert property (
-    almost_full === (count >= $clog2(DEPTH)'(ALMOST_FULL_THRESHOLD))
+    almost_full === (count >= $clog2(DEPTH)'(ALMOST_FULL_THRESH))
   ) else $error("G2: almost_full flag mismatch with count");
 
   // almost_empty ↔ count <= ALMOST_EMPTY_THRESHOLD
   a_almost_empty_iff_threshold : assert property (
-    almost_empty === (count <= $clog2(DEPTH)'(ALMOST_EMPTY_THRESHOLD))
+    almost_empty === (count <= $clog2(DEPTH)'(ALMOST_EMPTY_THRESH))
   ) else $error("G2: almost_empty flag mismatch with count");
 
   // full and empty are mutually exclusive (DEPTH >= 2 guaranteed)

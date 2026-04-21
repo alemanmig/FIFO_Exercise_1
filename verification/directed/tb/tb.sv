@@ -36,22 +36,25 @@ module tb;
   );
   
   // SVA
-  bind dut sva #(
+  bind sync_fifo sva#(
       .DEPTH                  (DEPTH),
       .WIDTH                  (WIDTH),
       .ALMOST_FULL_THRESH  (ALMOST_FULL_THRESH),
       .ALMOST_EMPTY_THRESH (ALMOST_EMPTY_THRESH)
   ) dut_sva (
-      .clk(vif.clk),
-      .rst_n(vif.rst_n),
-      .write_en(vif.write_en),
-      .write_data(vif.write_data),
-      .read_en(vif.read_en),
-      .read_data(vif.read_data),
-      .full(vif.full),
-      .empty(vif.empty),
-      .almost_full(vif.almost_full),
-      .almost_empty(vif.almost_empty)
+      .clk(clk),
+      .rst_n(rst_n),
+      .write_en(write_en),
+      .write_data(write_data),
+      .read_en(read_en),
+      .read_data(read_data),
+      .full(full),
+      .empty(empty),
+      .almost_full(almost_full),
+      .almost_empty(almost_empty),
+      .write_ptr(write_ptr),
+      .read_ptr(read_ptr),
+      .count(count)
   );
 
   initial begin
