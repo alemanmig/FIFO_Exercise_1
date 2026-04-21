@@ -36,7 +36,7 @@ module tb;
   );
   
   // SVA
-  bind sync_fifo sva #(
+  bind dut sva #(
       .DEPTH                  (DEPTH),
       .WIDTH                  (WIDTH),
       .ALMOST_FULL_THRESH  (ALMOST_FULL_THRESH),
@@ -54,7 +54,9 @@ module tb;
       .almost_empty(almost_empty),
       .wr_ptr(write_ptr),
       .rd_ptr(read_ptr),
-      .count(count)
+      .count(count),
+      .write_fire(wr_en_eff),
+      .read_fire(rd_en_eff)
   );
 
   initial begin

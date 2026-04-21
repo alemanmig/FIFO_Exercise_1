@@ -11,9 +11,4 @@
 -tree tb.dut.dut_sva.cover_p1
 
 // Enable assertions
-+tree tb.dut.dut_sva.a_rst_count_zero
-+tree tb.dut.dut_sva.a_rst_wr_ptr_zero 
-+tree tb.dut.dut_sva.a_rst_rd_ptr_zero 
-+tree tb.dut.dut_sva.a_rst_empty 
-+tree tb.dut.dut_sva.a_rst_not_full
-+tree tb.dut.dut_sva.a_rst_read_data_zero
++tree tb.dut.dut_sva
