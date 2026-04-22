@@ -5,6 +5,7 @@
 +incdir+sv
 sv/config_pkg.sv
 sv/vif_if.sv
+sv/fcov_fifo.sv
 tests/test.sv
 sva/sva.sv
 tb/tb.sv
