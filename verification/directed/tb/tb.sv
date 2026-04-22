@@ -59,6 +59,30 @@ module tb;
       .read_fire(rd_en_eff)
   );
 
+  // Functional coverage
+  bind dut fcov_fifo #(
+      .DEPTH               (DEPTH),
+      .WIDTH               (WIDTH),
+      .ALMOST_FULL_THRESH  (ALMOST_FULL_THRESH),
+      .ALMOST_EMPTY_THRESH (ALMOST_EMPTY_THRESH)
+  ) dut_fcov (
+      .clk(clk),
+      .rst_n(rst_n),
+      .write_en(write_en),
+      .write_data(write_data),
+      .read_en(read_en),
+      .read_data(read_data),
+      .full(full),
+      .empty(empty),
+      .almost_full(almost_full),
+      .almost_empty(almost_empty),
+      .wr_ptr(write_ptr),
+      .rd_ptr(read_ptr),
+      .count(count),
+      .write_fire(wr_en_eff),
+      .read_fire(rd_en_eff)
+  );
+
   initial begin
     $timeformat(-9, 1, "ns", 10);
   end
