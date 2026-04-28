@@ -87,7 +87,7 @@ endif
 # ==============================  TOOLS SETUP  ================================
 
 # Files
-RTL_FILES = $(RTL_DIR)/debouncer.sv
+RTL_FILES = $(RTL_DIR)/sync_fifo.sv
 SVE = -F $(TB_DIR)/sve.f
 VERDI_FILE = $(VERDI_DIR)/verdi.tcl
 DPI_FILE = $(DPI_DIR)/dpi.cpp
