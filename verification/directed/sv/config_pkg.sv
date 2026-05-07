@@ -8,10 +8,11 @@ package config_pkg;
   localparam int unsigned ClkFreq       = 100_000_000; // 100 MHz
   localparam int unsigned StableTime    = 1;           // 1 ms
   
-  localparam int DEPTH               = 8;
+  localparam int DEPTH               = 16;
   localparam int WIDTH               = 8;
   localparam int ALMOST_FULL_THRESH  = 6;
   localparam int ALMOST_EMPTY_THRESH = 2;
+  localparam int ATTEMPT             = 5;
 
   int unsigned debounce_time = 120;         // Clock cycles
   int unsigned iterations    = 50;        // Number of bounces
